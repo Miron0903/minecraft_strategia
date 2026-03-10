@@ -14,5 +14,14 @@
     "body-parser": "^2.2.2",
     "express": "^5.2.1",
     "mineflayer": "^4.35.0"
-  }
+  },
+  "devDependencies": {},
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Miron0903/minecraft_strategia.git"
+  },
+  "bugs": {
+    "url": "https://github.com/Miron0903/minecraft_strategia/issues"
+  },
+  "homepage": "https://github.com/Miron0903/minecraft_strategia#readme"
 }

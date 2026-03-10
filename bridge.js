@@ -8,38 +8,40 @@ app.use(bodyParser.json());
 let bot = null;
 let botConnected = false;
 
+// Функция для подключения бота к серверу
 function connectBot(host, port, username) {
     if (bot) {
         bot.end();
     }
-    
+
     bot = mineflayer.createBot({
         host: host,
         port: port,
         username: username
     });
-    
+
     bot.on('login', () => {
-        console.log(`? ��� ${username} ������稫�� � ${host}:${port}`);
+        console.log(`✅ Бот ${username} подключился к ${host}:${port}`);
         botConnected = true;
     });
-    
+
     bot.on('error', (err) => {
-        console.log('? �訡�� ���:', err);
+        console.log('❌ Ошибка бота:', err);
     });
-    
+
     bot.on('end', () => {
-        console.log('?? ��� �⪫�稫��');
+        console.log('🔌 Бот отключился');
         botConnected = false;
     });
-    
+
     bot.on('chat', (username, message) => {
-        console.log(`?? ${username}: ${message}`);
+        console.log(`💬 ${username}: ${message}`);
     });
-    
+
     return { status: 'connecting', username: username };
 }
 
+// API для управления ботом из Python
 app.post('/connect', (req, res) => {
     const { host, port, username } = req.body;
     const result = connectBot(host, port, username);
@@ -48,13 +50,14 @@ app.post('/connect', (req, res) => {
 
 app.post('/move', (req, res) => {
     const { direction, steps } = req.body;
-    
+
     if (!bot || !botConnected) {
-        return res.json({ error: '? ��� �� ������祭' });
+        return res.json({ error: 'Бот не подключен' });
     }
-    
-    console.log(`?? ��������: ${direction} �� ${steps} 蠣��`);
-    
+
+    console.log(`🚶 Движение: ${direction} на ${steps} шагов`);
+
+    // Двигаемся плавно
     for (let i = 0; i < steps; i++) {
         setTimeout(() => {
             if (bot && botConnected) {
@@ -67,49 +70,57 @@ app.post('/move', (req, res) => {
             }
         }, i * 400);
     }
-    
+
     res.json({ status: 'moving', direction, steps });
 });
 
 app.post('/jump', (req, res) => {
     if (!bot || !botConnected) {
-        return res.json({ error: '? ��� �� ������祭' });
+        return res.json({ error: 'Бот не подключен' });
     }
-    
-    console.log('?? ��릮�!');
+
+    console.log('🦘 Прыжок!');
     bot.setControlState('jump', true);
     setTimeout(() => {
         if (bot) bot.setControlState('jump', false);
     }, 500);
-    
+
     res.json({ status: 'jumped' });
 });
 
 app.post('/chat', (req, res) => {
     const { message } = req.body;
-    
+
     if (!bot || !botConnected) {
-        return res.json({ error: '? ��� �� ������祭' });
+        return res.json({ error: 'Бот не подключен' });
     }
-    
-    console.log(`?? ��� ������: ${message}`);
+
+    console.log(`💬 Бот говорит: ${message}`);
     bot.chat(message);
     res.json({ status: 'message sent', message });
 });
 
 app.get('/position', (req, res) => {
     if (!bot || !botConnected) {
-        return res.json({ error: '? ��� �� ������祭' });
+        return res.json({ error: 'Бот не подключен' });
     }
-    
-    const pos = bot.entity.position;
-    const result = {
-        x: Math.round(pos.x * 10) / 10,
-        y: Math.round(pos.y * 10) / 10,
-        z: Math.round(pos.z * 10) / 10
-    };
-    console.log(`?? ������: x=${result.x}, y=${result.y}, z=${result.z}`);
-    res.json(result);
+
+    try {
+        const pos = bot.entity.position;
+        // Отправляем всегда валидные числа
+        res.json({
+            x: Math.round(pos.x * 10) / 10,
+            y: Math.round(pos.y * 10) / 10,
+            z: Math.round(pos.z * 10) / 10
+        });
+    } catch (e) {
+        res.json({
+            error: 'Cannot get position',
+            x: 0,
+            y: 0,
+            z: 0
+        });
+    }
 });
 
 app.post('/disconnect', (req, res) => {
@@ -118,15 +129,16 @@ app.post('/disconnect', (req, res) => {
         bot = null;
         botConnected = false;
     }
-    console.log('?? �⪫�砥� ���');
+    console.log('🔌 Отключаем бота');
     res.json({ status: 'disconnected' });
 });
 
+// Запускаем сервер для Python
 const PORT = 3000;
 app.listen(PORT, () => {
     console.log('='.repeat(50));
-    console.log('?? ���� �������!');
-    console.log(`?? ����: ${PORT}`);
-    console.log('?? ��� ������� �� Python...');
+    console.log('🚀 МОСТ ЗАПУЩЕН!');
+    console.log(`🌐 Порт: ${PORT}`);
+    console.log('📡 Жду команды из Python...');
     console.log('='.repeat(50));
 });
